@@ -171,6 +171,34 @@ impl CPU {
         self.register_a = value;
         self.update_zero_and_negative_flags(self.register_a);
     }
+
+    fn add_to_register_a(&mut self, data: u8) {
+        let sum = self.register_a as u16
+            + data as u16
+            + (if self.status.contains(CpuFlags::CARRY) {
+            1
+        } else {
+            0
+        }) as u16;
+
+        let carry = sum > 0xff;
+
+        if carry {
+            self.status.insert(CpuFlags::CARRY);
+        } else {
+            self.status.remove(CpuFlags::CARRY);
+        }
+
+        let result = sum as u8;
+
+        if (data & result) & (result ^ self.register_a) & 0x80 != 0 {
+            self.status.insert(CpuFlags::OVERFLOW);
+        } else {
+            self.status.remove(CpuFlags::OVERFLOW);
+        }
+
+        self.set_register_a(result);
+    }
  
     // logical operation
     fn and(&mut self, mode: &AddressingMode) {
@@ -269,6 +297,17 @@ impl CPU {
         self.set_register_a(data);
     }
 
+    fn adc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        self.add_to_register_a(data);
+    }
+
+    fn sdc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        self.add_to_register_a(((data as i8).wrapping_neg().wrapping_add(1)) as u8);
+    }
     // load operation
     fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
