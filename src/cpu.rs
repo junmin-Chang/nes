@@ -137,6 +137,25 @@ impl CPU {
 
         (hi << 8) | lo
     }
+    
+    fn pla(&mut self) {
+        let data = self.stack_pop();
+        self.set_register_a(data);
+    }
+
+    fn plp(&mut self) {
+        let data = self.stack_pop();
+        self.status.bits = data;
+        self.status.remove(CpuFlags::BREAK);
+        self.status.insert(CpuFlags::BREAK2);
+    }
+
+    fn php(&mut self) {
+        let mut flags = self.status.clone();
+        flags.insert(CpuFlags::BREAK);
+        flags.insert(CpuFlags::BREAK2);
+        self.stack_push(flags.bits());
+    }
 
     fn get_operand_address(&mut self, mode: &AddressingMode) -> u16 {
         match mode {
