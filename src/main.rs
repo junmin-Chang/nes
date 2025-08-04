@@ -1,5 +1,5 @@
 mod cpu;
-mod opcode;
+mod opcodes;
 fn main() {
     println!("Hello, world!");
 }
